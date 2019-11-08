@@ -1,0 +1,10 @@
+--- a/bsp/modules/Makefile
++++ b/bsp/modules/Makefile
+@@ -16,7 +16,6 @@ all:
+ install:
+ 	mkdir -p $(KO_DIR)
+ 	cp *.ko $(KO_DIR)
+-	depmod -a
+ clean:
+ 	make -C $(KERNEL_DIR) M=$(PWD) clean
+ 	rm -rf ../../target/*.ko

@@ -1,0 +1,7 @@
+Package: ufispace-apollo-linux-modules-_KVERS_
+Section: kernel
+Architecture: any
+Provides: ufispace-apollo-linux-modules
+Depends: ${misc:Depends}, @KVERS_DEPEND@
+Description: Kernel modules for use with UFI Apollo BSP
+ Provides UFI Apollo kernel modules.

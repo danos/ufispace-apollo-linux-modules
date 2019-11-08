@@ -1,0 +1,99 @@
+--- a/bsp/modules/apollo_cpld.c
++++ b/bsp/modules/apollo_cpld.c
+@@ -144,6 +144,7 @@ enum apollo_cpld_sysfs_attributes {
+     CPLD_SYSTEM_LED_1,
+     CPLD_PSU_STATUS_0,
+     CPLD_PSU_STATUS_1,
++    CPLD_MUX_CONTROL,
+ };
+ 
+ /* CPLD sysfs attributes hook functions  */
+@@ -225,6 +226,10 @@ static ssize_t write_system_led(struct d
+         struct device_attribute *da, const char *buf, size_t count);
+ static ssize_t read_psu_status(struct device *dev,
+                 struct device_attribute *da, char *buf);
++static ssize_t read_mux_control(struct device *dev,
++                struct device_attribute *da, char *buf);
++static ssize_t write_mux_control(struct device *dev,
++        struct device_attribute *da, const char *buf, size_t count);
+ static LIST_HEAD(cpld_client_list);  /* client list for cpld */
+ static struct mutex list_lock;  /* mutex for client list */
+ 
+@@ -448,6 +453,8 @@ static SENSOR_DEVICE_ATTR(cpld_psu_statu
+         read_psu_status, NULL, CPLD_PSU_STATUS_0);
+ static SENSOR_DEVICE_ATTR(cpld_psu_status_1, S_IRUGO,
+         read_psu_status, NULL, CPLD_PSU_STATUS_1);        
++static SENSOR_DEVICE_ATTR(cpld_mux_control, S_IWUSR | S_IRUGO,
++        read_mux_control, write_mux_control, CPLD_MUX_CONTROL);
+ /* define support attributes of cpldx , total 5 */
+ /* cpld 1 */
+ static struct attribute *apollo_cpld1_attributes[] = {
+@@ -497,6 +504,7 @@ static struct attribute *apollo_cpld1_at
+     &sensor_dev_attr_cpld_psu_status_1.dev_attr.attr,
+     &sensor_dev_attr_cpld_system_led_0.dev_attr.attr,
+     &sensor_dev_attr_cpld_system_led_1.dev_attr.attr,
++    &sensor_dev_attr_cpld_mux_control.dev_attr.attr,
+     NULL
+ };
+ 
+@@ -1495,6 +1503,50 @@ static ssize_t read_psu_status(struct de
+     return -1;
+ }
+ 
++/* get mux control register value */
++static ssize_t read_mux_control(struct device *dev,
++				struct device_attribute *da,
++				char *buf)
++{
++    struct sensor_device_attribute *attr = to_sensor_dev_attr(da);
++    struct i2c_client *client = to_i2c_client(dev);
++    struct cpld_data *data = i2c_get_clientdata(client);
++    u8 reg;
++    int reg_val;
++
++    if (attr->index == CPLD_MUX_CONTROL) {
++        reg = CPLD_MUX_CONTROL_REG;
++        I2C_READ_BYTE_DATA(reg_val, &data->access_lock, client, reg);
++        if (reg_val < 0)
++            return -1;
++        return sprintf(buf, "0x%02x\n", reg_val);
++    }
++    return -1;
++}
++
++/* set value to mux control register */
++static ssize_t write_mux_control(struct device *dev,
++				 struct device_attribute *da,
++				 const char *buf,
++				 size_t count)
++{
++    struct sensor_device_attribute *attr = to_sensor_dev_attr(da);
++    struct i2c_client *client = to_i2c_client(dev);
++    struct cpld_data *data = i2c_get_clientdata(client);
++    u8 reg, reg_val;
++    int ret;
++
++    if (kstrtou8(buf, 0, &reg_val) < 0)
++        return -EINVAL;
++
++    if (attr->index == CPLD_MUX_CONTROL) {
++        reg = CPLD_MUX_CONTROL_REG;
++        I2C_WRITE_BYTE_DATA(ret, &data->access_lock,
++                    client, reg, reg_val);
++    }
++    return count;
++}
++
+ /* add valid cpld client to list */
+ static void apollo_cpld_add_client(struct i2c_client *client)
+ {
+--- a/bsp/modules/apollo_cpld.h
++++ b/bsp/modules/apollo_cpld.h
+@@ -93,6 +93,7 @@ enum LED_GREEN {
+ #define CPLD_QSFP_LED_BASE_REG            0x80
+ #define CPLD_QSFP_LED_BLINK_BASE_REG      0x90
+ #define CPLD_PSU_STATUS_BASE_REG          0x44
++#define CPLD_MUX_CONTROL_REG              0x45
+ 
+ #if 0
+ /* bit definition for register value */

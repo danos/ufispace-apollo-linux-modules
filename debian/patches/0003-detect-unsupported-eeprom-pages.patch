@@ -1,0 +1,33 @@
+--- a/bsp/modules/optoe.c
++++ b/bsp/modules/optoe.c
+@@ -506,6 +506,7 @@ static ssize_t optoe_eeprom_update_clien
+ 	struct i2c_client *client;
+ 	ssize_t retval = 0;
+ 	uint8_t page = 0;
++	uint8_t read_page = 0;
+ 	loff_t phy_offset = off;
+ 	int ret = 0;
+ 
+@@ -522,6 +523,22 @@ static ssize_t optoe_eeprom_update_clien
+ 					page, ret);
+ 			return ret;
+ 		}
++
++		ret = optoe_eeprom_read(optoe, client, &read_page,
++			OPTOE_PAGE_SELECT_REG, 1);
++		if (ret < 0) {
++			dev_dbg(&client->dev,
++				"Read page register failed ret:%d!\n", ret);
++			return ret;
++		}
++		/* Detect unsupported pages. SFF-8636:
++		 * "Writing the value of a non-supported page shall
++		 *  not be accepted by the transceiver. The Page Select
++		 *  byte shall revert to 0 and read/write operations
++		 *  shall be to Upper Page 00h."
++		 */
++		if (read_page != page)
++			return OPTOE_EOF;
+ 	}
+ 
+ 	while (count) {

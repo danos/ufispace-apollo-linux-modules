@@ -1,0 +1,47 @@
+#!/usr/bin/make -f
+include /usr/share/dpkg/default.mk
+
+ifeq (,$(KVERS))
+KVERS := $(shell LIST=$$(ls /lib/modules/); for dir in $$LIST; do test -d /lib/modules/$$dir/build && echo $$dir; done | sort -V | head -1)
+endif
+KVERS_BINARY := $(shell dpkg-query -W -f='$${Version}\n' linux-headers-$(KVERS))
+KVERS_DEPEND := linux-image-$(KVERS) (= $(KVERS_BINARY)) | linux-image-$(KVERS)-signed (= $(KVERS_BINARY)) | linux-image-$(KVERS)-unsigned (= $(KVERS_BINARY))
+export MODPKG=ufispace-apollo-linux-modules-$(KVERS)
+export KERNEL_DIR=/lib/modules/$(KVERS)/build
+export KVERSION=$(KVERS)
+
+debian/control.modules: debian/control.modules.in
+	@if [ x"$(KVERS)" = x ] ; then \
+		echo 'No kernel headers version found' >&2; \
+		exit 1; \
+	fi
+	sed -e "s/_KVERS_/$(KVERS)/" -e "s/@KVERS_DEPEND@/$(KVERS_DEPEND)/"< $< > $@
+	sed -i '/Package: ufispace-apollo-linux-modules/d' debian/control
+	sed -i '/Architecture: any/d' debian/control
+	cat $@ >> debian/control
+
+build: debian/control.modules
+	dh $@ --with signobs --sourcedirectory=bsp/modules
+
+%:
+	echo $(KERNEL_DIR)
+	dh $@ --with signobs --sourcedirectory=bsp/modules
+
+override_dh_auto_build:
+	dh_auto_build -- KERNEL_DIR=$(KERNEL_DIR)
+
+override_dh_auto_install:
+	dh_auto_install -- KO_DIR=$(CURDIR)/debian/tmp/lib/modules/$(KVERS)/extra/
+	dh_install -p $(MODPKG) lib/modules
+
+override_dh_auto_clean:
+	dh_auto_clean -- KERNEL_DIR=$(KERNEL_DIR)
+
+override_dh_clean:
+	dh_clean
+	rm -f debian/control.modules
+	sed -i '/Package: ufispace-apollo-linux-modules-/,/`tail -n1 debian/control.modules.in`/d' debian/control
+	if ! grep -qs 'Package: ufispace-apollo-linux-modules' debian/control; then \
+		echo 'Package: ufispace-apollo-linux-modules' >> debian/control; \
+		echo 'Architecture: any' >> debian/control; \
+	fi

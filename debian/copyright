@@ -1,0 +1,43 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Files: *
+Copyright: 2017-2019 UfiSpace Technology Corporation.
+License: GPL-2
+
+Files: bsp/modules/apollo_cpld.c
+Copyright: 2017-2019 UfiSpace Technology Corporation.
+ 2006 Stefan Roese <sr at denx.de>, DENX Software Engineering
+License: GPL-2
+
+Files: bsp/modules/eeprom_mb.c
+Copyright: 1998, 1999 Frodo Looijaard <frodol@dds.nl> and Philip Edelbrock <phil@netroedge.com>
+ 2003 Greg Kroah-Hartman <greg@kroah.com>
+ 2003 IBM Corp.
+ Jean Delvare <jdelvare@suse.de>
+License: GPL-2
+
+Files: bsp/modules/optoe.c
+Copyright: 2014 Cumulus networks Inc.
+ 2017 Finisar Corp.
+License: GPL-2
+
+Files: debian/*
+Copyright: 2019 AT&T Intellectual Property.
+License: GPL-2
+
+License: GPL-2
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License version 2 as
+ published by the Free Software Foundation.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this package; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+ .
+ On Debian systems, the complete text of the GNU General Public License version
+ 2 can be found in `/usr/share/common-licenses/GPL-2'.

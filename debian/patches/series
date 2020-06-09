@@ -1,3 +1,4 @@
 0001-build-fix.patch
 0002-expose-mux-ctrl.patch
 0003-detect-unsupported-eeprom-pages.patch
+0004-no-build-pca954x.patch

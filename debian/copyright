@@ -4,21 +4,26 @@ Files: *
 Copyright: 2017-2019 UfiSpace Technology Corporation.
 License: GPL-2
 
-Files: bsp/modules/apollo_cpld.c
+Files: bsp/modules/x86-64-ufispace-s9700-53dx-cpld.*
 Copyright: 2017-2019 UfiSpace Technology Corporation.
  2006 Stefan Roese <sr at denx.de>, DENX Software Engineering
 License: GPL-2
 
-Files: bsp/modules/eeprom_mb.c
+Files: bsp/modules/x86-64-ufispace-s9700-53dx-eeprom-mb.c
 Copyright: 1998, 1999 Frodo Looijaard <frodol@dds.nl> and Philip Edelbrock <phil@netroedge.com>
  2003 Greg Kroah-Hartman <greg@kroah.com>
  2003 IBM Corp.
  Jean Delvare <jdelvare@suse.de>
 License: GPL-2
 
-Files: bsp/modules/optoe.c
+Files: bsp/modules/x86-64-ufispace-s9700-53dx-optoe.c
 Copyright: 2014 Cumulus networks Inc.
  2017 Finisar Corp.
+License: GPL-2
+
+Files: bsp/modules/i2c-mux-pca954x.c
+Copyright: 2008-2009 Rodolfo Giometti <giometti@linux.it>
+ 2008-2009 Eurotech S.p.A. <info@eurotech.it>
 License: GPL-2
 
 Files: debian/*

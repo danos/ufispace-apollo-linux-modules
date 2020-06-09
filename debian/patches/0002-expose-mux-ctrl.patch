@@ -1,16 +1,16 @@
---- a/bsp/modules/apollo_cpld.c
-+++ b/bsp/modules/apollo_cpld.c
-@@ -144,6 +144,7 @@ enum apollo_cpld_sysfs_attributes {
-     CPLD_SYSTEM_LED_1,
-     CPLD_PSU_STATUS_0,
-     CPLD_PSU_STATUS_1,
+--- a/bsp/modules/x86-64-ufispace-s9700-53dx-cpld.c
++++ b/bsp/modules/x86-64-ufispace-s9700-53dx-cpld.c
+@@ -148,6 +148,7 @@ enum apollo_cpld_sysfs_attributes {
+     CPLD_GBOX_INTR_0,
+     CPLD_GBOX_INTR_1,
+     CPLD_RETIMER_INTR,
 +    CPLD_MUX_CONTROL,
  };
  
  /* CPLD sysfs attributes hook functions  */
-@@ -225,6 +226,10 @@ static ssize_t write_system_led(struct d
-         struct device_attribute *da, const char *buf, size_t count);
- static ssize_t read_psu_status(struct device *dev,
+@@ -237,6 +238,10 @@ static ssize_t read_gbox_intr(struct dev
+                 struct device_attribute *da, char *buf);
+ static ssize_t read_retimer_intr(struct device *dev,
                  struct device_attribute *da, char *buf);
 +static ssize_t read_mux_control(struct device *dev,
 +                struct device_attribute *da, char *buf);
@@ -19,24 +19,24 @@
  static LIST_HEAD(cpld_client_list);  /* client list for cpld */
  static struct mutex list_lock;  /* mutex for client list */
  
-@@ -448,6 +453,8 @@ static SENSOR_DEVICE_ATTR(cpld_psu_statu
-         read_psu_status, NULL, CPLD_PSU_STATUS_0);
- static SENSOR_DEVICE_ATTR(cpld_psu_status_1, S_IRUGO,
-         read_psu_status, NULL, CPLD_PSU_STATUS_1);        
+@@ -469,6 +474,8 @@ static SENSOR_DEVICE_ATTR(cpld_gbox_intr
+ 		read_gbox_intr, NULL, CPLD_GBOX_INTR_1);
+ static SENSOR_DEVICE_ATTR(cpld_retimer_intr, S_IRUGO,
+ 		read_retimer_intr, NULL, CPLD_RETIMER_INTR);
 +static SENSOR_DEVICE_ATTR(cpld_mux_control, S_IWUSR | S_IRUGO,
 +        read_mux_control, write_mux_control, CPLD_MUX_CONTROL);
  /* define support attributes of cpldx , total 5 */
  /* cpld 1 */
  static struct attribute *apollo_cpld1_attributes[] = {
-@@ -497,6 +504,7 @@ static struct attribute *apollo_cpld1_at
-     &sensor_dev_attr_cpld_psu_status_1.dev_attr.attr,
-     &sensor_dev_attr_cpld_system_led_0.dev_attr.attr,
-     &sensor_dev_attr_cpld_system_led_1.dev_attr.attr,
+@@ -522,6 +529,7 @@ static struct attribute *apollo_cpld1_at
+     &sensor_dev_attr_cpld_gbox_intr_0.dev_attr.attr,
+     &sensor_dev_attr_cpld_gbox_intr_1.dev_attr.attr,
+     &sensor_dev_attr_cpld_retimer_intr.dev_attr.attr,
 +    &sensor_dev_attr_cpld_mux_control.dev_attr.attr,
      NULL
  };
  
-@@ -1495,6 +1503,50 @@ static ssize_t read_psu_status(struct de
+@@ -1614,6 +1622,50 @@ static ssize_t read_retimer_intr(struct
      return -1;
  }
  
@@ -87,9 +87,9 @@
  /* add valid cpld client to list */
  static void apollo_cpld_add_client(struct i2c_client *client)
  {
---- a/bsp/modules/apollo_cpld.h
-+++ b/bsp/modules/apollo_cpld.h
-@@ -93,6 +93,7 @@ enum LED_GREEN {
+--- a/bsp/modules/x86-64-ufispace-s9700-53dx-cpld.h
++++ b/bsp/modules/x86-64-ufispace-s9700-53dx-cpld.h
+@@ -96,6 +96,7 @@ enum LED_GREEN {
  #define CPLD_QSFP_LED_BASE_REG            0x80
  #define CPLD_QSFP_LED_BLINK_BASE_REG      0x90
  #define CPLD_PSU_STATUS_BASE_REG          0x44

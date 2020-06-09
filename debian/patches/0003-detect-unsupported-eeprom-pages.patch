@@ -1,6 +1,6 @@
---- a/bsp/modules/optoe.c
-+++ b/bsp/modules/optoe.c
-@@ -506,6 +506,7 @@ static ssize_t optoe_eeprom_update_clien
+--- a/bsp/modules/x86-64-ufispace-s9700-53dx-optoe.c
++++ b/bsp/modules/x86-64-ufispace-s9700-53dx-optoe.c
+@@ -536,6 +536,7 @@ static ssize_t optoe_eeprom_update_clien
  	struct i2c_client *client;
  	ssize_t retval = 0;
  	uint8_t page = 0;
@@ -8,7 +8,7 @@
  	loff_t phy_offset = off;
  	int ret = 0;
  
-@@ -522,6 +523,22 @@ static ssize_t optoe_eeprom_update_clien
+@@ -552,6 +553,22 @@ static ssize_t optoe_eeprom_update_clien
  					page, ret);
  			return ret;
  		}

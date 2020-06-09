@@ -30,7 +30,7 @@
 #include <linux/hwmon-sysfs.h>
 #include <linux/err.h>
 #include <linux/mutex.h>
-#include "apollo_cpld.h"
+#include "x86-64-ufispace-s9700-53dx-cpld.h"
 
 #ifdef DEBUG
 #define DEBUG_PRINT(fmt, args...) \
@@ -116,13 +116,14 @@ enum apollo_cpld_sysfs_attributes {
     CPLD_QSFPDD_PORT_CONFIG_8,
     CPLD_QSFPDD_PORT_CONFIG_9,
     CPLD_QSFPDD_PORT_CONFIG_10,
-    CPLD_10GMUX_CONFIG,
+    CPLD_INTERRUPT_2,
     CPLD_BMC_STATUS,
     CPLD_BMC_WATCHDOG,
     CPLD_USB_STATUS,
     CPLD_RESET_CONTROL,
     CPLD_RESET_MAC,
     CPLD_RESET_RETIMER,
+    CPLD_RESET_MAC_2,
     CPLD_SFP_LED,
     CPLD_SFP_LED_BLINK,
     CPLD_QSFP_LED_BLINK,
@@ -144,6 +145,9 @@ enum apollo_cpld_sysfs_attributes {
     CPLD_SYSTEM_LED_1,
     CPLD_PSU_STATUS_0,
     CPLD_PSU_STATUS_1,
+    CPLD_GBOX_INTR_0,
+    CPLD_GBOX_INTR_1,
+    CPLD_RETIMER_INTR,
 };
 
 /* CPLD sysfs attributes hook functions  */
@@ -181,9 +185,9 @@ static ssize_t read_sfp_port_config(struct device *dev,
                 struct device_attribute *da, char *buf);
 static ssize_t write_sfp_port_config(struct device *dev,
         struct device_attribute *da, const char *buf, size_t count);
-static ssize_t read_10gmux_config(struct device *dev,
+static ssize_t read_cpld_interrupt_2(struct device *dev,
                 struct device_attribute *da, char *buf);
-static ssize_t write_10gmux_config(struct device *dev,
+static ssize_t write_cpld_interrupt_2(struct device *dev,
         struct device_attribute *da, const char *buf, size_t count);
 static ssize_t read_bmc_status(struct device *dev,
                 struct device_attribute *da, char *buf);
@@ -205,6 +209,10 @@ static ssize_t read_reset_retimer(struct device *dev,
                 struct device_attribute *da, char *buf);
 static ssize_t write_reset_retimer(struct device *dev,
         struct device_attribute *da, const char *buf, size_t count);
+static ssize_t read_reset_mac_2(struct device *dev,
+                struct device_attribute *da, char *buf);
+static ssize_t write_reset_mac_2(struct device *dev,
+        struct device_attribute *da, const char *buf, size_t count);
 static ssize_t get_qsfpdd_port_start(struct device *dev,
                 struct device_attribute *da, char *buf);
 static ssize_t get_qsfpdd_ports(struct device *dev,
@@ -225,6 +233,10 @@ static ssize_t write_system_led(struct device *dev,
         struct device_attribute *da, const char *buf, size_t count);
 static ssize_t read_psu_status(struct device *dev,
                 struct device_attribute *da, char *buf);
+static ssize_t read_gbox_intr(struct device *dev,
+                struct device_attribute *da, char *buf);
+static ssize_t read_retimer_intr(struct device *dev,
+                struct device_attribute *da, char *buf);
 static LIST_HEAD(cpld_client_list);  /* client list for cpld */
 static struct mutex list_lock;  /* mutex for client list */
 
@@ -241,11 +253,11 @@ struct cpld_data {
 
 /* CPLD device id and data */
 static const struct i2c_device_id apollo_cpld_id[] = {
-    { "apollo_cpld1",  cpld1 },
-    { "apollo_cpld2",  cpld2 },
-    { "apollo_cpld3",  cpld3 },
-    { "apollo_cpld4",  cpld4 },
-    { "apollo_cpld5",  cpld5 },
+    { "s9700_53dx_cpld1",  cpld1 },
+    { "s9700_53dx_cpld2",  cpld2 },
+    { "s9700_53dx_cpld3",  cpld3 },
+    { "s9700_53dx_cpld4",  cpld4 },
+    { "s9700_53dx_cpld5",  cpld5 },
     {}
 };
 
@@ -339,9 +351,9 @@ static SENSOR_DEVICE_ATTR(cpld_sfp_port_status, S_IRUGO,
             read_sfp_port_status, NULL, CPLD_SFP_PORT_STATUS);
 static SENSOR_DEVICE_ATTR(cpld_sfp_port_config, S_IWUSR | S_IRUGO,
     read_sfp_port_config, write_sfp_port_config, CPLD_SFP_PORT_CONFIG);
-static SENSOR_DEVICE_ATTR(cpld_10gmux_config, S_IWUSR | S_IRUGO,
-                read_10gmux_config, write_10gmux_config,
-                CPLD_10GMUX_CONFIG);
+static SENSOR_DEVICE_ATTR(cpld_interrupt_2, S_IWUSR | S_IRUGO,
+                read_cpld_interrupt_2, write_cpld_interrupt_2,
+                CPLD_INTERRUPT_2);
 static SENSOR_DEVICE_ATTR(cpld_bmc_status, S_IRUGO,
                 read_bmc_status, NULL, CPLD_BMC_STATUS);
 static SENSOR_DEVICE_ATTR(cpld_bmc_watchdog, S_IWUSR | S_IRUGO,
@@ -358,6 +370,9 @@ static SENSOR_DEVICE_ATTR(cpld_reset_mac, S_IWUSR | S_IRUGO,
 static SENSOR_DEVICE_ATTR(cpld_reset_retimer, S_IWUSR | S_IRUGO,
                 read_reset_retimer, write_reset_retimer,
                 CPLD_RESET_RETIMER);
+static SENSOR_DEVICE_ATTR(cpld_reset_mac_2, S_IWUSR | S_IRUGO,
+                read_reset_mac_2, write_reset_mac_2,
+                CPLD_RESET_MAC_2);
 static SENSOR_DEVICE_ATTR(cpld_qsfpdd_port_start, S_IRUGO,
             get_qsfpdd_port_start, NULL, CPLD_QSFPDD_PORT_START);
 static SENSOR_DEVICE_ATTR(cpld_qsfpdd_ports, S_IRUGO,
@@ -447,7 +462,13 @@ static SENSOR_DEVICE_ATTR(cpld_system_led_1, S_IWUSR | S_IRUGO,
 static SENSOR_DEVICE_ATTR(cpld_psu_status_0, S_IRUGO,
         read_psu_status, NULL, CPLD_PSU_STATUS_0);
 static SENSOR_DEVICE_ATTR(cpld_psu_status_1, S_IRUGO,
-        read_psu_status, NULL, CPLD_PSU_STATUS_1);        
+        read_psu_status, NULL, CPLD_PSU_STATUS_1);
+static SENSOR_DEVICE_ATTR(cpld_gbox_intr_0, S_IRUGO,
+        read_gbox_intr, NULL, CPLD_GBOX_INTR_0);
+static SENSOR_DEVICE_ATTR(cpld_gbox_intr_1, S_IRUGO,
+		read_gbox_intr, NULL, CPLD_GBOX_INTR_1);
+static SENSOR_DEVICE_ATTR(cpld_retimer_intr, S_IRUGO,
+		read_retimer_intr, NULL, CPLD_RETIMER_INTR);
 /* define support attributes of cpldx , total 5 */
 /* cpld 1 */
 static struct attribute *apollo_cpld1_attributes[] = {
@@ -486,17 +507,21 @@ static struct attribute *apollo_cpld1_attributes[] = {
     &sensor_dev_attr_cpld_qsfp_port_config_11.dev_attr.attr,
     &sensor_dev_attr_cpld_sfp_port_status.dev_attr.attr,
     &sensor_dev_attr_cpld_sfp_port_config.dev_attr.attr,
-    &sensor_dev_attr_cpld_10gmux_config.dev_attr.attr,
+    &sensor_dev_attr_cpld_interrupt_2.dev_attr.attr,
     &sensor_dev_attr_cpld_bmc_status.dev_attr.attr,
     &sensor_dev_attr_cpld_bmc_watchdog.dev_attr.attr,
     &sensor_dev_attr_cpld_usb_status.dev_attr.attr,
     &sensor_dev_attr_cpld_reset_control.dev_attr.attr,
     &sensor_dev_attr_cpld_reset_mac.dev_attr.attr,
     &sensor_dev_attr_cpld_reset_retimer.dev_attr.attr,
+    &sensor_dev_attr_cpld_reset_mac_2.dev_attr.attr,
     &sensor_dev_attr_cpld_psu_status_0.dev_attr.attr,
     &sensor_dev_attr_cpld_psu_status_1.dev_attr.attr,
     &sensor_dev_attr_cpld_system_led_0.dev_attr.attr,
     &sensor_dev_attr_cpld_system_led_1.dev_attr.attr,
+    &sensor_dev_attr_cpld_gbox_intr_0.dev_attr.attr,
+    &sensor_dev_attr_cpld_gbox_intr_1.dev_attr.attr,
+    &sensor_dev_attr_cpld_retimer_intr.dev_attr.attr,
     NULL
 };
 
@@ -954,6 +979,8 @@ static ssize_t write_qsfp_port_config(struct device *dev,
             (attr->index - CPLD_QSFP_PORT_CONFIG_0);
         I2C_WRITE_BYTE_DATA(ret, &data->access_lock,
                     client, reg, reg_val);
+        DEBUG_PRINT("cpld[%d], port_idx[%d], reg[0x%02x], val[0x%02x]",
+                		data->index, (attr->index - CPLD_QSFP_PORT_CONFIG_0), reg, reg_val);
     }
     return count;
 }
@@ -1040,6 +1067,8 @@ static ssize_t write_qsfpdd_port_config(struct device *dev,
         reg = reg_base + (attr->index - CPLD_QSFPDD_PORT_CONFIG_0);
         I2C_WRITE_BYTE_DATA(ret, &data->access_lock,
                     client, reg, reg_val);
+        DEBUG_PRINT("cpld[%d], port_idx[%d], reg[0x%02x], val[0x%02x]",
+        		data->index, (attr->index - CPLD_QSFPDD_PORT_CONFIG_0), reg, reg_val);
     }
     return count;
 }
@@ -1109,8 +1138,8 @@ static ssize_t write_sfp_port_config(struct device *dev,
     return count;
 }
 
-/* get 10g mux config register value */
-static ssize_t read_10gmux_config(struct device *dev,
+/* get cpld interrupt 2 register value */
+static ssize_t read_cpld_interrupt_2(struct device *dev,
                     struct device_attribute *da,
                     char *buf)
 {
@@ -1120,8 +1149,8 @@ static ssize_t read_10gmux_config(struct device *dev,
     u8 reg;
     int reg_val;
 
-    if (attr->index == CPLD_10GMUX_CONFIG) {
-        reg = CPLD_10GMUX_CONFIG_REG;
+    if (attr->index == CPLD_INTERRUPT_2) {
+        reg = CPLD_INTERRUPT_2_REG;
         I2C_READ_BYTE_DATA(reg_val, &data->access_lock, client, reg);
         if (reg_val < 0)
             return -1;
@@ -1130,8 +1159,8 @@ static ssize_t read_10gmux_config(struct device *dev,
     return -1;
 }
 
-/* set value to 10g mux config register */
-static ssize_t write_10gmux_config(struct device *dev,
+/* set value to cpld interrupt 2 register */
+static ssize_t write_cpld_interrupt_2(struct device *dev,
                     struct device_attribute *da,
                     const char *buf,
                     size_t count)
@@ -1145,8 +1174,8 @@ static ssize_t write_10gmux_config(struct device *dev,
     if (kstrtou8(buf, 0, &reg_val) < 0)
         return -EINVAL;
 
-    if (attr->index == CPLD_10GMUX_CONFIG) {
-        reg = CPLD_10GMUX_CONFIG_REG;
+    if (attr->index == CPLD_INTERRUPT_2) {
+        reg = CPLD_INTERRUPT_2_REG;
         I2C_WRITE_BYTE_DATA(ret, &data->access_lock,
                     client, reg, reg_val);
     }
@@ -1371,6 +1400,50 @@ static ssize_t write_reset_retimer(struct device *dev,
     return count;
 }
 
+/* get reset mac 2 register value */
+static ssize_t read_reset_mac_2(struct device *dev,
+                    struct device_attribute *da,
+                    char *buf)
+{
+    struct sensor_device_attribute *attr = to_sensor_dev_attr(da);
+    struct i2c_client *client = to_i2c_client(dev);
+    struct cpld_data *data = i2c_get_clientdata(client);
+    u8 reg;
+    int reg_val;
+
+    if (attr->index == CPLD_RESET_MAC_2) {
+        reg = CPLD_RESET_MAC_2_REG;
+        I2C_READ_BYTE_DATA(reg_val, &data->access_lock, client, reg);
+        if (reg_val < 0)
+            return -1;
+        return sprintf(buf, "0x%02x\n", reg_val);
+    }
+    return -1;
+}
+
+/* set value to reset mac 2 register */
+static ssize_t write_reset_mac_2(struct device *dev,
+                    struct device_attribute *da,
+                    const char *buf,
+                    size_t count)
+{
+    struct sensor_device_attribute *attr = to_sensor_dev_attr(da);
+    struct i2c_client *client = to_i2c_client(dev);
+    struct cpld_data *data = i2c_get_clientdata(client);
+    u8 reg, reg_val;
+    int ret;
+
+    if (kstrtou8(buf, 0, &reg_val) < 0)
+        return -EINVAL;
+
+    if (attr->index == CPLD_RESET_MAC_2) {
+        reg = CPLD_RESET_MAC_2_REG;
+        I2C_WRITE_BYTE_DATA(ret, &data->access_lock,
+                    client, reg, reg_val);
+    }
+    return count;
+}
+
 /* get qsfpdd port led register */
 static ssize_t read_qsfpdd_led(struct device *dev,
                     struct device_attribute *da,
@@ -1422,7 +1495,7 @@ static ssize_t write_qsfpdd_led(struct device *dev,
     return count;
 }
 
-/* get qsfpdd port led register */
+/* get system led register */
 static ssize_t read_system_led(struct device *dev,
                     struct device_attribute *da,
                     char *buf)
@@ -1446,7 +1519,7 @@ static ssize_t read_system_led(struct device *dev,
     return -1;
 }
 
-/* set value to qsfpdd port led register */
+/* set system led register */
 static ssize_t write_system_led(struct device *dev,
                     struct device_attribute *da,
                     const char *buf,
@@ -1487,6 +1560,52 @@ static ssize_t read_psu_status(struct device *dev,
     if (attr->index >= CPLD_PSU_STATUS_0 &&
         attr->index <= CPLD_PSU_STATUS_1) {
         reg = CPLD_PSU_STATUS_BASE_REG;
+        I2C_READ_BYTE_DATA(reg_val, &data->access_lock, client, reg);
+        if (reg_val < 0)
+            return -1;
+        return sprintf(buf, "0x%02x\n", reg_val);
+    }
+    return -1;
+}
+
+/* get gearbox intr register */
+static ssize_t read_gbox_intr(struct device *dev,
+                    struct device_attribute *da,
+                    char *buf)
+{
+    struct sensor_device_attribute *attr = to_sensor_dev_attr(da);
+    struct i2c_client *client = to_i2c_client(dev);
+    struct cpld_data *data = i2c_get_clientdata(client);
+    u8 reg;
+    int reg_val;
+    int gbox_index=0;
+
+    if (attr->index >= CPLD_GBOX_INTR_0 &&
+        attr->index <= CPLD_GBOX_INTR_1) {
+    	gbox_index = attr->index - CPLD_GBOX_INTR_0;
+    	reg = CPLD_GBOX_INTR_BASE_REG + gbox_index;
+
+        I2C_READ_BYTE_DATA(reg_val, &data->access_lock, client, reg);
+        if (reg_val < 0)
+            return -1;
+        return sprintf(buf, "0x%02x\n", reg_val);
+    }
+    return -1;
+}
+
+/* get retimer intr register */
+static ssize_t read_retimer_intr(struct device *dev,
+                    struct device_attribute *da,
+                    char *buf)
+{
+    struct sensor_device_attribute *attr = to_sensor_dev_attr(da);
+    struct i2c_client *client = to_i2c_client(dev);
+    struct cpld_data *data = i2c_get_clientdata(client);
+    u8 reg;
+    int reg_val;
+
+    if (attr->index == CPLD_RETIMER_INTR) {
+    	reg = CPLD_RETIMER_INTR_BASE_REG;
         I2C_READ_BYTE_DATA(reg_val, &data->access_lock, client, reg);
         if (reg_val < 0)
             return -1;
@@ -1679,7 +1798,7 @@ MODULE_DEVICE_TABLE(i2c, apollo_cpld_id);
 static struct i2c_driver apollo_cpld_driver = {
     .class      = I2C_CLASS_HWMON,
     .driver = {
-        .name = "apollo_cpld",
+        .name = "x86_64_ufispace_s9700_53dx_cpld",
     },
     .probe = apollo_cpld_probe,
     .remove = apollo_cpld_remove,
@@ -1714,7 +1833,7 @@ int apollo_cpld_read(u8 cpld_idx,
 
     return ret;
 }
-EXPORT_SYMBOL(apollo_cpld_read);
+//EXPORT_SYMBOL(apollo_cpld_read);
 
 /* provide cpld register write */
 /* cpld_idx indicate the index of cpld device */
@@ -1744,7 +1863,7 @@ int apollo_cpld_write(u8 cpld_idx,
 
     return ret;
 }
-EXPORT_SYMBOL(apollo_cpld_write);
+//EXPORT_SYMBOL(apollo_cpld_write);
 
 /* provide qsfp port status register read */
 /* port_num indicate the front panel qsfp port number */
@@ -1764,7 +1883,7 @@ int apollo_cpld_get_qsfp_port_status_val(u8 port_num)
     reg_val = apollo_cpld_read(cpld_idx, reg);
     return reg_val;
 }
-EXPORT_SYMBOL(apollo_cpld_get_qsfp_port_status_val);
+//EXPORT_SYMBOL(apollo_cpld_get_qsfp_port_status_val);
 
 /* provide qsfp port config register read */
 /* port_num indicate the front panel qsfp port number */
@@ -1784,7 +1903,7 @@ int apollo_cpld_get_qsfp_port_config_val(u8 port_num)
     reg_val = apollo_cpld_read(cpld_idx, reg);
     return reg_val;
 }
-EXPORT_SYMBOL(apollo_cpld_get_qsfp_port_config_val);
+//EXPORT_SYMBOL(apollo_cpld_get_qsfp_port_config_val);
 
 /* provide qsfp port config register write */
 /* port_num indicate the front panel qsfp port number */
@@ -1804,7 +1923,7 @@ int apollo_cpld_set_qsfp_port_config_val(u8 port_num,
     ret = apollo_cpld_write(cpld_idx, reg, reg_val);
     return ret;
 }
-EXPORT_SYMBOL(apollo_cpld_set_qsfp_port_config_val);
+//EXPORT_SYMBOL(apollo_cpld_set_qsfp_port_config_val);
 
 /* provide sfp port 0/1 status register read */
 int apollo_cpld_get_sfp_port_status_val(void)
@@ -1819,7 +1938,7 @@ int apollo_cpld_get_sfp_port_status_val(void)
     reg_val = apollo_cpld_read(cpld_idx, reg);
     return reg_val;
 }
-EXPORT_SYMBOL(apollo_cpld_get_sfp_port_status_val);
+//EXPORT_SYMBOL(apollo_cpld_get_sfp_port_status_val);
 
 /* provide qsfp port config register read */
 /* port_num indicate the front panel qsfp port number */
@@ -1835,7 +1954,7 @@ int apollo_cpld_get_sfp_port_config_val(void)
     reg_val = apollo_cpld_read(cpld_idx, reg);
     return reg_val;
 }
-EXPORT_SYMBOL(apollo_cpld_get_sfp_port_config_val);
+//EXPORT_SYMBOL(apollo_cpld_get_sfp_port_config_val);
 
 /* provide qsfp port config register write */
 /* port_num indicate the front panel qsfp port number */
@@ -1850,7 +1969,7 @@ int apollo_cpld_set_sfp_port_config_val(u8 reg_val)
     ret = apollo_cpld_write(cpld_idx, reg, reg_val);
     return ret;
 }
-EXPORT_SYMBOL(apollo_cpld_set_sfp_port_config_val);
+//EXPORT_SYMBOL(apollo_cpld_set_sfp_port_config_val);
 
 static int __init apollo_cpld_init(void)
 {

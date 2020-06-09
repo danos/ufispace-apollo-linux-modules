@@ -70,6 +70,8 @@ enum LED_GREEN {
 #define CPLD_QSFPDD_PORT_STATUS_BASE_REG  0x20
 #define CPLD_QSFPDD_PORT_CONFIG_BASE_REG  0x30
 #define CPLD4_QSFPDD_PORT_STATUS_BASE_REG 0x2A
+#define CPLD_GBOX_INTR_BASE_REG           0x2C
+#define CPLD_RETIMER_INTR_BASE_REG        0x2E
 #define CPLD4_QSFPDD_PORT_CONFIG_BASE_REG 0x3A
 #define CPLD_QSFPDD_PORT_INTERRUPT_REG    0x40
 #define CPLD_INTERRUPT_REG                0x40
@@ -80,13 +82,14 @@ enum LED_GREEN {
 #define CPLD_QSFP_PORT_INTERRUPT_REG      0x40
 #define CPLD_SFP_PORT_STATUS_REG          0x2F
 #define CPLD_SFP_PORT_CONFIG_REG          0x3F
-#define CPLD_10GMUX_CONFIG_REG            0x41
+#define CPLD_INTERRUPT_2_REG              0x41
 #define CPLD_BMC_STATUS_REG               0x42
 #define CPLD_BMC_WATCHDOG_REG             0x43
 #define CPLD_USB_STATUS_REG               0x44
 #define CPLD_RESET_CONTROL_REG            0x4A
 #define CPLD_RESET_MAC_REG                0x4D
 #define CPLD_RESET_RETIMER_REG            0x4E
+#define CPLD_RESET_MAC_2_REG              0x4F
 #define CPLD_SYSTEM_LED_BASE_REG          0x50
 #define CPLD_SFP_LED_REG                  0x80
 #define CPLD_SFP_LED_BLINK_REG            0x90

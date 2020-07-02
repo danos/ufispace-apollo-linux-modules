@@ -1,10 +1,11 @@
-ufispace-apollo-linux-modules (4.1.1-0vyatta1) UNRELEASED; urgency=medium
+ufispace-apollo-linux-modules (4.1.1-0vyatta1) unstable; urgency=medium
 
   * Import of bsp/modules from NCP1-1_BSP_Release_R4.1.1.zip
   * Refresh patches
   * debian: update copyright file with upstream changes
+  * debian: don't build the i2c-mux-pca954x driver
 
- -- Robert Shearman <robert.shearman@att.com>  Tue, 09 Jun 2020 18:08:00 +0100
+ -- Robert Shearman <robert.shearman@att.com>  Thu, 02 Jul 2020 12:16:02 +0100
 
 ufispace-apollo-linux-modules (3.0.0-0vyatta2) unstable; urgency=medium
 

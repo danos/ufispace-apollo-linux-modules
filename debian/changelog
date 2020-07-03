@@ -1,3 +1,9 @@
+ufispace-apollo-linux-modules (4.1.1-0vyatta2) unstable; urgency=medium
+
+  * debian: allow versioned dependencies on the provides to work
+
+ -- Robert Shearman <robert.shearman@att.com>  Fri, 03 Jul 2020 16:15:28 +0100
+
 ufispace-apollo-linux-modules (4.1.1-0vyatta1) unstable; urgency=medium
 
   * Import of bsp/modules from NCP1-1_BSP_Release_R4.1.1.zip

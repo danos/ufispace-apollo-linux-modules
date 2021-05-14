@@ -21,11 +21,19 @@ debian/control.modules: debian/control.modules.in
 	cat $@ >> debian/control
 
 build: debian/control.modules
+ifeq ($(filter noobs,$(DEB_BUILD_PROFILES)),)
 	dh $@ --with signobs --sourcedirectory=bsp/modules
+else
+	dh $@ --sourcedirectory=bsp/modules
+endif
 
 %:
 	echo $(KERNEL_DIR)
+ifeq ($(filter noobs,$(DEB_BUILD_PROFILES)),)
 	dh $@ --with signobs --sourcedirectory=bsp/modules
+else
+	dh $@ --sourcedirectory=bsp/modules
+endif
 
 override_dh_auto_build:
 	dh_auto_build -- KERNEL_DIR=$(KERNEL_DIR)

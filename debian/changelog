@@ -1,3 +1,9 @@
+ufispace-apollo-linux-modules (4.1.1-0vyatta4) unstable; urgency=medium
+
+  * Convert to i2c_new_dummy_device (Bugfix: VRVDR-55062)
+
+ -- Charles (Chas) Williams <ciwillia@vyatta.att-mail.com>  Wed, 14 Jul 2021 15:07:16 -0400
+
 ufispace-apollo-linux-modules (4.1.1-0vyatta3) unstable; urgency=medium
 
   * Add noobs build profile (Closes: VRVDR-53810)
